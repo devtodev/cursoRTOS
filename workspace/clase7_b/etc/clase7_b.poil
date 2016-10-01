@@ -1,0 +1,134 @@
+/*
+
+Clase 7 
+
+Implementar un programa en OSEK con las siguientes tareas:
+
+Tarea A: Recibe datos por UART (1 byte por vez)
+Tarea B: Cada vez que se recibe un byte, generar el número recibido de periodos de un LED.
+
+*/
+/*                                                                           */
+/*  This file describes the current OSEK configuration.                      */
+/*  References:                                                              */
+/*  - OSEK OS standard: http://portal.osek-vdx.org/files/pdf/specs/os223.pdf */
+/*  - OSEK OIL standard: http://portal.osek-vdx.org/files/pdf/specs/oil25.pdf*/
+/*****************************************************************************/
+#include "ciaaPlatforms.h"
+
+OSEK OSEK {
+
+OS	ExampleOS {
+    STATUS = EXTENDED;
+    ERRORHOOK = TRUE;
+    PRETASKHOOK = FALSE;
+    POSTTASKHOOK = FALSE;
+    STARTUPHOOK = FALSE;
+    SHUTDOWNHOOK = FALSE;
+    USERESSCHEDULER = FALSE;
+    MEMMAP = FALSE;
+};
+
+TASK InitTask {
+    PRIORITY = 1;
+    ACTIVATION = 1;
+    AUTOSTART = TRUE {
+        APPMODE = AppMode1;
+    }
+    STACK = 512;
+    TYPE = BASIC;
+    SCHEDULE = NON;
+    RESOURCE = POSIXR;
+    EVENT = POSIXE;
+}
+
+TASK taskUART {
+    PRIORITY = 5;
+    ACTIVATION = 1;
+    STACK = 512;
+    TYPE = EXTENDED;
+    SCHEDULE = FULL;
+    EVENT = POSIXE;
+    RESOURCE = POSIXR;
+}
+
+TASK taskLED {
+    PRIORITY = 12;
+    ACTIVATION = 1;
+    STACK = 512;
+    TYPE = EXTENDED;
+    SCHEDULE = FULL;
+    RESOURCE = POSIXR;
+    EVENT = POSIXE;
+    AUTOSATART = TRUE {
+        APPMODE = AppMode1;
+    }
+}
+
+ALARM ActivateTaskLED {
+    COUNTER = SoftwareCounter;
+    ACTION = ACTIVATETASK {
+        TASK = taskLED;
+    }
+}
+
+RESOURCE = POSIXR;
+
+EVENT = POSIXE;
+
+APPMODE = AppMode1;
+
+COUNTER HardwareCounter {
+   MAXALLOWEDVALUE = 100;
+   TICKSPERBASE = 1;
+   MINCYCLE = 1;
+   TYPE = HARDWARE;
+   COUNTER = HWCOUNTER0;
+};
+
+COUNTER SoftwareCounter {
+   MAXALLOWEDVALUE = 1000;
+   TICKSPERBASE = 1;
+   MINCYCLE = 1;
+   TYPE = SOFTWARE;
+};
+
+ALARM IncrementSWCounter {
+   COUNTER = HardwareCounter;
+   ACTION = INCREMENT {
+      COUNTER = SoftwareCounter;
+   };
+   AUTOSTART = TRUE {
+      APPMODE = AppMode1;
+      ALARMTIME = 1;
+      CYCLETIME = 1;
+   };
+};
+
+ISR UART0_IRQHandler {
+   INTERRUPT = UART0;
+   CATEGORY = 2;
+   PRIORITY = 0;
+};
+
+ISR UART2_IRQHandler {
+#if BOARD == ciaa_fsl
+   INTERRUPT = UART5;
+#else
+   INTERRUPT = UART2;
+#endif
+   CATEGORY = 2;
+   PRIORITY = 0;
+};
+
+ISR UART3_IRQHandler {
+#if BOARD == ciaa_fsl
+   INTERRUPT = UART2;
+#else
+   INTERRUPT = UART3;
+#endif
+   CATEGORY = 2;
+   PRIORITY = 0;
+};
+
+};

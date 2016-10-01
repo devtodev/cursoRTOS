@@ -161,18 +161,16 @@ TASK(InitTask)
    /* print message (only on x86) */
    ciaaPOSIX_printf("Init Task...\n\0");
 
-   /* open CIAA digital outputs */
+   /* LED */
    fd_out = ciaaPOSIX_open("/dev/dio/out/0", ciaaPOSIX_O_RDWR);
 
-   /* open UART connected to USB bridge (FT2232) */
+   /* UART */
    fd_uart1 = ciaaPOSIX_open("/dev/serial/uart/1", ciaaPOSIX_O_RDWR);
 
-      /* change baud rate for uart usb */
+   /* change baud rate for uart usb */
    ciaaPOSIX_ioctl(fd_uart1, ciaaPOSIX_IOCTL_SET_BAUDRATE, (void *)ciaaBAUDRATE_115200);
 
-   /* activate periodic task:
-    *  - for the first time after 350 ticks (350 ms)
-    *  - and then every 250 ticks (250 ms)
+   /* Seteo la alarma para ejecutarse cada 1000 milisegundos
     */
    SetRelAlarm(ActivatePeriodicTaskA, 0, 1000);
 
